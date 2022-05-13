@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const db = require('_helpers/db');
 const crypto = require("crypto");
 const sendEmail = require('_helpers/send-mail');
+const { Op } = require('sequelize');
 
 
 
@@ -12,6 +13,7 @@ module.exports = {
     getAll,
     getById,
     forgotPassword,
+    resetPassword,
     create,
     update,
     delete: _delete
@@ -31,6 +33,32 @@ async function authenticate({ email, password }) {
 
 async function getAll() {
     return await db.User.findAll();
+}
+
+async function validateResetToken({ token }) {
+    const user = await db.User.findOne({
+        where: {
+            resetToken: token,
+            resetTokenExpires: { [Op.gt]: Date.now() }
+        }
+    });
+
+    if (!user) throw 'Invalid token';
+
+    return user;
+}
+
+async function hash(password) {
+    return await bcrypt.hash(password, 10);
+}
+
+async function resetPassword({ token, password }) {
+    const user = await validateResetToken({ token });
+    // update password and remove reset token
+    user.hash = await hash(password);
+    user.passwordReset = Date.now();
+    user.resetToken = null;
+    await user.save();
 }
 
 async function getById(id) {
@@ -113,7 +141,7 @@ function randomTokenString() {
 async function sendPasswordResetEmail(user, origin) {
     let message;
     if (origin) {
-        const resetUrl = `${origin}/user/reset-password?token=${user.resetToken}`;
+        const resetUrl = `${origin}/reset-password?token=${user.resetToken}`;
         message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
                    <p><a href="${resetUrl}">${resetUrl}</a></p>`;
     } else {
@@ -127,4 +155,3 @@ async function sendPasswordResetEmail(user, origin) {
                ${message}`
     });
 }
-

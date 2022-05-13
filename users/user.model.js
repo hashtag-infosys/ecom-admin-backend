@@ -9,6 +9,7 @@ function model(sequelize) {
         hash: { type: DataTypes.STRING, allowNull: false },
         resetToken: { type: DataTypes.STRING },
         resetTokenExpires: { type: DataTypes.DATE },
+        passwordReset: { type: DataTypes.DATE },
     };
 
     const options = {

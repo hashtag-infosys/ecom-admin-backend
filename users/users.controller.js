@@ -11,6 +11,8 @@ router.post('/register', registerSchema, register);
 router.get('/', authorize(), getAll);
 router.get('/:id', authorize(), getById);
 router.post('/forgot-password', forgotPasswordSchema, forgotPassword);
+router.post('/validate-reset-token', validateResetTokenSchema, validateResetToken);
+router.post('/reset-password', resetPasswordSchema, resetPassword);
 router.put('/:id', authorize(), updateSchema, update);
 router.delete('/:id', authorize(), _delete);
 
@@ -22,6 +24,34 @@ function authenticateSchema(req, res, next) {
         password: Joi.string().required()
     });
     validateRequest(req, next, schema);
+}
+
+function validateResetTokenSchema(req, res, next) {
+    const schema = Joi.object({
+        token: Joi.string().required()
+    });
+    validateRequest(req, next, schema);
+}
+
+function validateResetToken(req, res, next) {
+    userService.validateResetToken(req.body)
+        .then(() => res.json({ message: 'Token is valid' }))
+        .catch(next);
+}
+
+function resetPasswordSchema(req, res, next) {
+    const schema = Joi.object({
+        token: Joi.string().required(),
+        password: Joi.string().min(6).required(),
+        confirmPassword: Joi.string().valid(Joi.ref('password')).required()
+    });
+    validateRequest(req, next, schema);
+}
+
+function resetPassword(req, res, next) {
+    userService.resetPassword(req.body)
+        .then(() => res.json({ message: 'Password reset successful, you can now login' }))
+        .catch(next);
 }
 
 function authenticate(req, res, next) {

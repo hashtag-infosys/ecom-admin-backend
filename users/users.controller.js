@@ -9,8 +9,8 @@ const userService = require('./user.service');
 router.post('/authenticate', authenticateSchema, authenticate);
 router.post('/register', registerSchema, register);
 router.get('/', authorize(), getAll);
-router.get('/current', authorize(), getCurrent);
 router.get('/:id', authorize(), getById);
+router.post('/forgot-password', forgotPasswordSchema, forgotPassword);
 router.put('/:id', authorize(), updateSchema, update);
 router.delete('/:id', authorize(), _delete);
 
@@ -18,7 +18,7 @@ module.exports = router;
 
 function authenticateSchema(req, res, next) {
     const schema = Joi.object({
-        username: Joi.string().required(),
+        email: Joi.string().required(),
         password: Joi.string().required()
     });
     validateRequest(req, next, schema);
@@ -32,8 +32,7 @@ function authenticate(req, res, next) {
 
 function registerSchema(req, res, next) {
     const schema = Joi.object({
-        firstName: Joi.string().required(),
-        lastName: Joi.string().required(),
+        email: Joi.string().email().empty(''),
         username: Joi.string().required(),
         password: Joi.string().min(6).required()
     });
@@ -52,20 +51,28 @@ function getAll(req, res, next) {
         .catch(next);
 }
 
-function getCurrent(req, res, next) {
-    res.json(req.user);
-}
-
 function getById(req, res, next) {
     userService.getById(req.params.id)
         .then(user => res.json(user))
         .catch(next);
 }
 
+function forgotPasswordSchema(req, res, next) {
+    const schema = Joi.object({
+        email: Joi.string().email().required()
+    });
+    validateRequest(req, next, schema);
+}
+
+function forgotPassword(req, res, next) {
+    userService.forgotPassword(req.body, req.get('origin'))
+        .then(() => res.json({ message: 'Please check your email for password reset instructions' }))
+        .catch(next);
+}
+
 function updateSchema(req, res, next) {
     const schema = Joi.object({
-        firstName: Joi.string().empty(''),
-        lastName: Joi.string().empty(''),
+        email: Joi.string().email().empty(''),
         username: Joi.string().empty(''),
         password: Joi.string().min(6).empty('')
     });

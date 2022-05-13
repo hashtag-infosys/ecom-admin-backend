@@ -2,21 +2,27 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('_helpers/db');
+const crypto = require("crypto");
+const sendEmail = require('_helpers/send-mail');
+
+
 
 module.exports = {
     authenticate,
     getAll,
     getById,
+    forgotPassword,
     create,
     update,
     delete: _delete
 };
 
-async function authenticate({ username, password }) {
-    const user = await db.User.scope('withHash').findOne({ where: { username } });
+
+async function authenticate({ email, password }) {
+    const user = await db.User.scope('withHash').findOne({ where: { email } });
 
     if (!user || !(await bcrypt.compare(password, user.hash)))
-        throw 'Username or password is incorrect';
+        throw 'email or password is incorrect';
 
     // authentication successful
     const token = jwt.sign({ sub: user.id }, config.secret, { expiresIn: '7d' });
@@ -33,8 +39,8 @@ async function getById(id) {
 
 async function create(params) {
     // validate
-    if (await db.User.findOne({ where: { username: params.username } })) {
-        throw 'Username "' + params.username + '" is already taken';
+    if (await db.User.findOne({ where: { email: params.email } })) {
+        throw 'email "' + params.email + '" is already taken';
     }
 
     // hash password
@@ -50,9 +56,9 @@ async function update(id, params) {
     const user = await getUser(id);
 
     // validate
-    const usernameChanged = params.username && user.username !== params.username;
-    if (usernameChanged && await db.User.findOne({ where: { username: params.username } })) {
-        throw 'Username "' + params.username + '" is already taken';
+    const emailChanged = params.email && user.email !== params.email;
+    if (emailChanged && await db.User.findOne({ where: { email: params.email } })) {
+        throw 'email "' + params.email + '" is already taken';
     }
 
     // hash password if it was entered
@@ -84,3 +90,41 @@ function omitHash(user) {
     const { hash, ...userWithoutHash } = user;
     return userWithoutHash;
 }
+
+async function forgotPassword({ email }, origin) {
+    const user = await db.User.findOne({ where: { email } });
+
+    // always return ok response to prevent email enumeration
+    if (!user) return;
+
+    // create reset token that expires after 24 hours
+    user.resetToken = randomTokenString();
+    user.resetTokenExpires = new Date(Date.now() + 24*60*60*1000);
+    await user.save();
+
+    // send email
+    await sendPasswordResetEmail(user, origin);
+}
+
+function randomTokenString() {
+    return crypto.randomBytes(40).toString('hex');
+}
+
+async function sendPasswordResetEmail(user, origin) {
+    let message;
+    if (origin) {
+        const resetUrl = `${origin}/user/reset-password?token=${user.resetToken}`;
+        message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
+                   <p><a href="${resetUrl}">${resetUrl}</a></p>`;
+    } else {
+        message = `<p>Please use the below token to reset your password with the <code>/user/reset-password</code> api route:</p>
+                   <p><code>${user.resetToken}</code></p>`;
+    }
+    await sendEmail({
+        to: user.email,
+        subject: 'Sign-up Verification API - Reset Password',
+        html: `<h4>Reset Password Email</h4>
+               ${message}`
+    });
+}
+

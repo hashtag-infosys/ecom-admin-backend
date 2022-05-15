@@ -13,7 +13,9 @@ async function initialize() {
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\`;`);
 
     // connect to db
-    const sequelize = new Sequelize(database, user, password, { dialect: 'mysql' });
+    console.log('database info',database)
+    const sequelize = new Sequelize(database, user, password, { dialect: 'mysql',
+	host:host });
 
     // init models and add them to the exported db object
     db.User = require('../users/user.model')(sequelize);

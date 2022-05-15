@@ -25,6 +25,7 @@ var options = {
 // start server
 const port = 3301;
 
-https.createServer(options, app).listen(port, function(){
-    console.log("Express server listening on port " + port);
-});
+// https.createServer(options, app).listen(port, function(){
+//     console.log("Express server listening on port " + port);
+// });
+app.listen(port, () => console.log('Server listening on port ' + port));

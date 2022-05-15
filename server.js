@@ -18,8 +18,8 @@ app.use('/users', require('./users/users.controller'));
 app.use(errorHandler);
 
 var options = {
-    key: fs.readFileSync('./certs/server-key.pem'),
-    cert: fs.readFileSync('./certs/server-cert.pem'),
+    key: fs.readFileSync('server-key.pem'),
+    cert: fs.readFileSync('server-cert.pem'),
 };
 
 // start server

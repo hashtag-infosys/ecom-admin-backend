@@ -1,10 +1,10 @@
 ﻿{
     "database": {
-        "host": "localhost",
+        "host": "ecomdb.ckz6eeftrqbf.us-east-1.rds.amazonaws.com",
         "port": 3306,
-        "user": "root",
-        "password": "",
-        "database": "node-mysql-registration-login-api"
+        "user": "admin",
+        "password": "Parth14151617",
+        "database": "cloud337"
     },
     "secret": "sdlfkjoiojkoiggjggggggggggggggggsaaaaaaaaaaaaaaaaaa",
     "emailFrom": "hemangisanghani7@gmail.com",

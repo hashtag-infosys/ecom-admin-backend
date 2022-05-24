@@ -10,6 +10,12 @@ function model(sequelize) {
         resetToken: { type: DataTypes.STRING },
         resetTokenExpires: { type: DataTypes.DATE },
         passwordReset: { type: DataTypes.DATE },
+        verificationToken: { type: DataTypes.STRING },
+        verified: { type: DataTypes.DATE },
+        isVerified: {
+            type: DataTypes.VIRTUAL,
+            get() { return !!(this.verified || this.passwordReset); }
+        }
     };
 
     const options = {

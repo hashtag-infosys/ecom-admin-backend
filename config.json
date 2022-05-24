@@ -4,7 +4,7 @@
         "port": 3306,
         "user": "root",
         "password": "",
-        "database": "node-mysql-registration-login-api"
+        "database": "node-mysql-registration-login"
     },
     "secret": "sdlfkjoiojkoiggjggggggggggggggggsaaaaaaaaaaaaaaaaaa",
     "emailFrom": "hemangisanghani7@gmail.com",
@@ -12,7 +12,7 @@
         "service":"gmail",
     "auth":{
         "user":"hemangisanghani7@gmail.com",
-        "pass":"Test@123"
+        "pass":"@Test123@"
     },
     "tls":{
         "rejectUnauthorized":false

@@ -16,7 +16,9 @@ module.exports = {
     resetPassword,
     create,
     update,
-    delete: _delete
+    delete: _delete,
+    verifyEmail,
+    register
 };
 
 
@@ -78,6 +80,7 @@ async function create(params) {
 
     // save user
     await db.User.create(params);
+    return basicDetails(user);
 }
 
 async function update(id, params) {
@@ -127,11 +130,87 @@ async function forgotPassword({ email }, origin) {
 
     // create reset token that expires after 24 hours
     user.resetToken = randomTokenString();
-    user.resetTokenExpires = new Date(Date.now() + 24*60*60*1000);
+    user.resetTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await user.save();
 
     // send email
     await sendPasswordResetEmail(user, origin);
+}
+
+async function verifyEmail({ token }) {
+    const user = await db.User.findOne({ where: { verificationToken: token } });
+
+    if (!user) throw 'Verification failed';
+
+    user.verified = Date.now();
+    user.verificationToken = null;
+    await user.save();
+}
+
+async function register(params, origin) {
+    // validate
+    if (await db.User.findOne({ where: { email: params.email } })) {
+        // send already registered error in email to prevent user enumeration
+        return await sendAlreadyRegisteredEmail(params.email, origin);
+    }
+
+        // params.hash = await bcrypt.hash(params.password, 10);
+    
+    // create user object
+    const user = new db.User(params);
+    user.verificationToken = randomTokenString();
+
+    user.hash = await hash(params.password);
+
+  
+
+    // save user
+    await user.save();
+
+    // send email
+    await sendVerificationEmail(user, origin);
+}
+
+function basicDetails(user) {
+    const { id, email, username, password, createdAt, updated, isVerified } = user;
+    return { id, email, username, password, createdAt, updated, isVerified };
+}
+
+async function sendVerificationEmail(user, origin) {
+    let message;
+    if (origin) {
+        const verifyUrl = `${origin}/user/verify-email?token=${user.verificationToken}`;
+        message = `<p>Please click the below link to verify your email address:</p>
+                   <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
+    } else {
+        message = `<p>Please use the below token to verify your email address with the <code>/user/verify-email</code> api route:</p>
+                   <p><code>${user.verificationToken}</code></p>`;
+    }
+
+    await sendEmail({
+        to: user.email,
+        subject: 'Sign-up Verification API - Verify Email',
+        html: `<h4>Verify Email</h4>
+               <p>Thanks for registering!</p>
+               ${message}`
+    });
+}
+
+async function sendAlreadyRegisteredEmail(email, origin) {
+    let message;
+    if (origin) {
+        message = `<p>If you don't know your password please visit the <a href="${origin}/user/forgot-password">forgot password</a> page.</p>`;
+    } else {
+        message = `<p>If you don't know your password you can reset it via the <code>/user/forgot-password</code> api route.</p>`;
+    }
+
+    await sendEmail({
+        to: email,
+        subject: 'Sign-up Verification API - Email Already Registered',
+        html: `<h4>Email Already Registered</h4>
+               <p>Your email <strong>${email}</strong> is already registered.</p>
+               ${message}`
+    });
 }
 
 function randomTokenString() {

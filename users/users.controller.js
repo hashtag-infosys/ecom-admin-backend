@@ -8,6 +8,7 @@ const userService = require('./user.service');
 // routes
 router.post('/authenticate', authenticateSchema, authenticate);
 router.post('/register', registerSchema, register);
+router.post('/verify-email', verifyEmailSchema, verifyEmail);
 router.get('/', authorize(), getAll);
 router.get('/:id', authorize(), getById);
 router.post('/forgot-password', forgotPasswordSchema, forgotPassword);
@@ -70,10 +71,24 @@ function registerSchema(req, res, next) {
 }
 
 function register(req, res, next) {
-    userService.create(req.body)
-        .then(() => res.json({ message: 'Registration successful' }))
+    userService.register(req.body, req.get('origin'))
+        .then(() => res.json({ message: 'Registration successful,please check your email for verification instructions' }))
         .catch(next);
 }
+
+function verifyEmailSchema(req, res, next) {
+    const schema = Joi.object({
+        token: Joi.string().required()
+    });
+    validateRequest(req, next, schema);
+}
+
+function verifyEmail(req, res, next) {
+    userService.verifyEmail(req.body)
+        .then(() => res.json({ message: 'Verification successful, you can now login' }))
+        .catch(next);
+}
+
 
 function getAll(req, res, next) {
     userService.getAll()
@@ -114,6 +129,8 @@ function update(req, res, next) {
         .then(user => res.json(user))
         .catch(next);
 }
+
+
 
 function _delete(req, res, next) {
     userService.delete(req.params.id)

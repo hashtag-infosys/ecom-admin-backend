@@ -179,7 +179,7 @@ function basicDetails(user) {
 async function sendVerificationEmail(user, origin) {
     let message;
     if (origin) {
-        const verifyUrl = `${origin}/user/verify-email?token=${user.verificationToken}`;
+        const verifyUrl = `${origin}/verify-email?token=${user.verificationToken}`;
         message = `<p>Please click the below link to verify your email address:</p>
                    <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
     } else {
